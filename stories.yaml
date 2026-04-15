@@ -1,0 +1,16 @@
+stories:
+  - id: US-001
+    title: User login
+    description: As a user, I want to log in so that I can access my account.
+
+  - id: US-002
+    title: View profile
+    description: As a user, I want to view my profile information.
+
+  - id: US-003
+    title: Reset password
+    description: As a user, I want to reset my password if I forget it.
+
+  - id: US-004
+    title: Delete account
+    description: As a user, I want to delete my account permanently.

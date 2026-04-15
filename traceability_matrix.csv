@@ -1,0 +1,5 @@
+Story ID,Title,Description,Linked Tests,Status
+US-001,User login,"As a user, I want to log in so that I can access my account.",test_login_success,Passed
+US-002,View profile,"As a user, I want to view my profile information.",test_view_profile,Passed
+US-003,Reset password,"As a user, I want to reset my password if I forget it.",test_reset_password,Broken
+US-004,Delete account,"As a user, I want to delete my account permanently.",No linked tests,Not Covered

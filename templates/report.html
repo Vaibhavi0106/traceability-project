@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Traceability Dashboard</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background: #f4f6f9;
+            color: #222;
+        }
+
+        .container {
+            width: 92%;
+            max-width: 1300px;
+            margin: 30px auto;
+        }
+
+        h1 {
+            margin-bottom: 20px;
+        }
+
+        .cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+
+        .card {
+            background: white;
+            padding: 18px;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        }
+
+        .card h3 {
+            margin: 0 0 8px;
+            font-size: 16px;
+            color: #555;
+        }
+
+        .card p {
+            margin: 0;
+            font-size: 28px;
+            font-weight: bold;
+        }
+
+        .coverage-card {
+            background: linear-gradient(135deg, #1f6feb, #5aa9ff);
+            color: white;
+        }
+
+        .coverage-card h3 {
+            color: white;
+        }
+
+        .progress-wrapper {
+            margin-top: 12px;
+            background: rgba(255,255,255,0.25);
+            border-radius: 999px;
+            height: 14px;
+            overflow: hidden;
+        }
+
+        .progress-bar {
+            height: 100%;
+            background: white;
+            border-radius: 999px;
+        }
+
+        .chart-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 25px;
+        }
+
+        .chart-card {
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        }
+
+        .chart-card h3 {
+            margin-top: 0;
+            margin-bottom: 15px;
+            font-size: 18px;
+        }
+
+        .chart-box {
+            position: relative;
+            height: 320px;
+        }
+
+        .controls {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 20px;
+            align-items: center;
+        }
+
+        .controls input {
+            padding: 10px;
+            width: 260px;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+        }
+
+        .controls button {
+            padding: 10px 14px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            background: #e0e0e0;
+            font-weight: bold;
+        }
+
+        .controls button:hover {
+            background: #d5d5d5;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            border-radius: 12px;
+            overflow: hidden;
+        }
+
+        th, td {
+            padding: 14px;
+            border-bottom: 1px solid #eee;
+            text-align: left;
+            vertical-align: top;
+        }
+
+        th {
+            background: #222;
+            color: white;
+        }
+
+        tr:hover {
+            background: #f8f9fb;
+        }
+
+        .status {
+            padding: 6px 10px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: bold;
+            display: inline-block;
+        }
+
+        .passed {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .broken {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .not-covered {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .unknown {
+            background: #e2e3e5;
+            color: #383d41;
+        }
+
+        .muted {
+            color: #777;
+        }
+
+        .no-results {
+            margin-top: 15px;
+            color: #777;
+            font-style: italic;
+            display: none;
+        }
+
+        @media (max-width: 900px) {
+            .chart-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Requirements Traceability Dashboard</h1>
+
+        <div class="cards">
+            <div class="card">
+                <h3>Total Stories</h3>
+                <p>{{ metrics.total_stories }}</p>
+            </div>
+
+            <div class="card">
+                <h3>Covered Stories</h3>
+                <p>{{ metrics.covered_stories }}</p>
+            </div>
+
+            <div class="card">
+                <h3>Uncovered Stories</h3>
+                <p>{{ metrics.uncovered_stories }}</p>
+            </div>
+
+            <div class="card">
+                <h3>Broken Stories</h3>
+                <p>{{ metrics.broken_stories }}</p>
+            </div>
+
+            <div class="card">
+                <h3>Passing Stories</h3>
+                <p>{{ metrics.passed_stories }}</p>
+            </div>
+
+            <div class="card coverage-card">
+                <h3>Coverage %</h3>
+                <p>{{ metrics.coverage_percent }}%</p>
+                <div class="progress-wrapper">
+                    <div class="progress-bar" style="width: {{ metrics.coverage_percent }}%;"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="chart-grid">
+            <div class="chart-card">
+                <h3>Story Status Distribution</h3>
+                <div class="chart-box">
+                    <canvas id="statusPieChart"></canvas>
+                </div>
+            </div>
+
+            <div class="chart-card">
+                <h3>Number of Linked Tests per Story</h3>
+                <div class="chart-box">
+                    <canvas id="testsBarChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <div class="controls">
+            <input type="text" id="searchInput" placeholder="Search by Story ID or Title">
+
+            <button onclick="filterRows('All')">All</button>
+            <button onclick="filterRows('Passed')">Passed</button>
+            <button onclick="filterRows('Broken')">Broken</button>
+            <button onclick="filterRows('Not Covered')">Not Covered</button>
+        </div>
+
+        <table id="storyTable">
+            <thead>
+                <tr>
+                    <th>Story ID</th>
+                    <th>Title</th>
+                    <th>Description</th>
+                    <th>Linked Tests</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for row in matrix %}
+                <tr data-status="{{ row.status }}">
+                    <td>{{ row.id }}</td>
+                    <td>{{ row.title }}</td>
+                    <td>{{ row.description }}</td>
+                    <td>
+                        {% if row.tests %}
+                            {{ row.tests | join(', ') }}
+                        {% else %}
+                            <span class="muted">No linked tests</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if row.status == "Passed" %}
+                            <span class="status passed">Passed</span>
+                        {% elif row.status == "Broken" %}
+                            <span class="status broken">Broken</span>
+                        {% elif row.status == "Not Covered" %}
+                            <span class="status not-covered">Not Covered</span>
+                        {% else %}
+                            <span class="status unknown">{{ row.status }}</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+        <p id="noResults" class="no-results">No matching stories found.</p>
+    </div>
+
+    <script>
+        let currentFilter = "All";
+
+        function filterRows(status) {
+            currentFilter = status;
+            applyFilters();
+        }
+
+        function applyFilters() {
+            const input = document.getElementById("searchInput").value.toLowerCase();
+            const rows = document.querySelectorAll("#storyTable tbody tr");
+            const noResults = document.getElementById("noResults");
+            let visibleCount = 0;
+
+            rows.forEach(row => {
+                const storyId = row.cells[0].textContent.toLowerCase();
+                const title = row.cells[1].textContent.toLowerCase();
+                const rowStatus = row.getAttribute("data-status");
+
+                const matchesSearch = storyId.includes(input) || title.includes(input);
+                const matchesFilter = currentFilter === "All" || rowStatus === currentFilter;
+
+                if (matchesSearch && matchesFilter) {
+                    row.style.display = "";
+                    visibleCount++;
+                } else {
+                    row.style.display = "none";
+                }
+            });
+
+            noResults.style.display = visibleCount === 0 ? "block" : "none";
+        }
+
+        document.getElementById("searchInput").addEventListener("keyup", applyFilters);
+
+        const pieCtx = document.getElementById("statusPieChart").getContext("2d");
+        new Chart(pieCtx, {
+            type: "pie",
+            data: {
+                labels: ["Passed", "Broken", "Not Covered"],
+                datasets: [{
+                    data: [{{ passed_count }}, {{ broken_count }}, {{ not_covered_count }}]
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false
+            }
+        });
+
+        const barCtx = document.getElementById("testsBarChart").getContext("2d");
+        new Chart(barCtx, {
+            type: "bar",
+            data: {
+                labels: {{ story_ids | tojson }},
+                datasets: [{
+                    label: "Number of Linked Tests",
+                    data: {{ test_counts | tojson }}
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            precision: 0
+                        }
+                    }
+                }
+            }
+        });
+    </script>
+</body>
+</html>

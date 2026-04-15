@@ -1,0 +1,4 @@
+Flask
+PyYAML
+pytest
+pytest-json-report
