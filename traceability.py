@@ -3,7 +3,7 @@ import json
 import re
 import csv
 import os
-
+import sys
 
 def load_stories(file_path):
     _, ext = os.path.splitext(file_path.lower())
@@ -167,3 +167,6 @@ if __name__ == "__main__":
     print(f"Broken Stories: {metrics['broken_stories']}")
     print(f"Passed Stories: {metrics['passed_stories']}")
     print(f"Coverage: {metrics['coverage_percent']}%")
+    if metrics["broken_stories"] > 0:
+    print("\nCI CHECK FAILED: Broken requirements detected.")
+    sys.exit(1)
